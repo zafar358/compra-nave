@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lista de Compra Premium</title>
+    <!-- iOS support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lista Nave">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3737/3737372.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #ec4899;
+            --background: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            /* App feel: prevent text selection */
+        }
+
+        /* Allow selection in inputs only */
+        input,
+        textarea,
+        [contenteditable] {
+            user-select: text;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--background);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 150px;
+            /* Space for summary footer */
+            overscroll-behavior-y: contain;
+            /* Prevent pull-to-refresh if desired */
+        }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+            position: relative;
+        }
+
+        #btnInstall {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: none;
+            /* Hidden until prompt is available */
+            align-items: center;
+            gap: 5px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        #btnInstall:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* --- Controls (Search & Add) --- */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            flex: 1;
+            position: relative;
+            min-width: 280px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        input.main-search {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            font-size: 1rem;
+            font-family: inherit;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        input.main-search:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .btn-add-item {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 25px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-add-item:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* --- Categories --- */
+        .categories-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+
+        .categories-filter::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-chip {
+            padding: 8px 18px;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .category-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* --- Products Grid --- */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .product-card.selected {
+            background: rgba(99, 102, 241, 0.08);
+            border: 2px solid var(--primary);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .product-code {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 8px;
+            border-radius: 50px;
+        }
+
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .card-controls {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 15px;
+        }
+
+        .quantity-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .quantity-control label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .quantity-control input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .notes-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .notes-control label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .notes-control input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .check-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .product-card.selected .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- Summary Floating Bar --- */
+        .summary-bar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 20px 30px;
+            border-radius: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transform: translate(-50%, 100px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .summary-bar.visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .summary-info h3 {
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .summary-info p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-action {
+            height: 48px;
+            padding: 0 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pdf {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            animation: modalScale 0.3s ease-out;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes modalScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* --- Mobile Tweaks --- */
+        @media (max-width: 640px) {
+            .summary-bar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+                bottom: 15px;
+            }
+
+            .summary-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn-action span {
+                display: none;
+            }
+
+            .btn-action {
+                padding: 0 15px;
+                flex: 1;
+                justify-content: center;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #btnInstall {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 0 auto 20px;
+            }
+        }
+
+        /* Hidden toast */
+        #toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transform: translateY(-100px);
+            transition: all 0.3s ease;
+            z-index: 3000;
+        }
+
+        #toast.visible {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <button id="btnInstall">
+                <i data-lucide="download-cloud"></i>
+                <span>Instalar App</span>
+            </button>
+            <h1>🛒 Mi Lista Nave</h1>
+            <p>Tu asistente de compra familiar</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-container">
+                <i data-lucide="search"></i>
+                <input type="text" class="main-search" id="searchInput"
+                    placeholder="Busca productos o códigos..." oninput="filtrarProductos()">
+            </div>
+            <button class="btn-add-item" onclick="openModal()">
+                <i data-lucide="plus"></i>
+                <span>Nuevo</span>
+            </button>
+        </div>
+
+        <div class="categories-filter" id="categoryTabs">
+            <div class="category-chip active" onclick="setCategory('Todos')">Todos</div>
+            <div class="category-chip" onclick="setCategory('Despensa')">Despensa</div>
+            <div class="category-chip" onclick="setCategory('Bebidas')">Bebidas</div>
+            <div class="category-chip" onclick="setCategory('Conservas')">Conservas</div>
+            <div class="category-chip" onclick="setCategory('Varios')">Varios</div>
+        </div>
+
+        <div id="productsGrid" class="products-grid">
+            <!-- Products injected here -->
+        </div>
+    </div>
+
+    <!-- Summary Bar -->
+    <div id="summaryBar" class="summary-bar">
+        <div class="summary-info">
+            <h3 id="selectedCount">0 Productos</h3>
+            <p>Toca para exportar</p>
+        </div>
+        <div class="summary-actions">
+            <button class="btn-action btn-clear" onclick="limpiarSeleccion()">
+                <i data-lucide="trash-2"></i>
+                <span>Vaciar</span>
+            </button>
+            <button class="btn-action btn-whatsapp" onclick="compartirWhatsApp()">
+                <i data-lucide="message-circle"></i>
+                <span>WhatsApp</span>
+            </button>
+            <button class="btn-action btn-pdf" onclick="exportarPDF()">
+                <i data-lucide="download"></i>
+                <span>PDF</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal for New Product -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Añadir Producto</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="newProdName" placeholder="Ej: Leche Entera">
+                </div>
+                <div class="form-group">
+                    <label>Código</label>
+                    <input type="text" id="newProdCode" placeholder="Ej: 12345">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="newProdCat">
+                        <option value="Despensa">Despensa</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Conservas">Conservas</option>
+                        <option value="Varios">Varios</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer;"
+                    onclick="closeModal()">Cancelar</button>
+                <button class="btn-add-item" style="padding:10px 20px" onclick="guardarNuevoProducto()">Añadir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">¡Hecho!</div>
+
+    <script>
+        // Data initial
+        const initialProducts = [
+            { id: 1, codigo: "88189", nombre: "Ventresca Atún", categoria: "Conservas" },
+            { id: 2, codigo: "88133", nombre: "Espárrago 6/12", categoria: "Conservas" },
+            { id: 3, codigo: "89160", nombre: "Vino Care", categoria: "Bebidas" },
+            { id: 4, codigo: "83257", nombre: "Chupadedos Barr 850", categoria: "Despensa" },
+            { id: 5, codigo: "88034", nombre: "Garbanzo LT KG 12Ud JAE", categoria: "Conservas" },
+            { id: 6, codigo: "88145", nombre: "Cardo Fco 720mm", categoria: "Conservas" },
+            { id: 7, codigo: "89370", nombre: "Vino blanco Gewürztraminer 6Ud", categoria: "Bebidas" },
+            { id: 8, codigo: "88059", nombre: "Alubia blanca pocha 12Ud JAE", categoria: "Conservas" },
+            { id: 9, codigo: "88179", nombre: "Caballa Fil RR-125", categoria: "Conservas" },
+            { id: 10, codigo: "88242", nombre: "Atún claro ACE LT RO-160", categoria: "Conservas" },
+            { id: 11, codigo: "83017", nombre: "Banderilla anchoa boquerón 30PZ", categoria: "Varios" },
+            { id: 12, codigo: "00001", nombre: "Galletas Costco Choco Blanco", categoria: "Despensa" },
+            { id: 13, codigo: "00002", nombre: "Café Lavazza Costco", categoria: "Bebidas" },
+            { id: 14, codigo: "00003", nombre: "Tomate Triturado LT 24Ud", categoria: "Conservas" },
+            { id: 15, codigo: "00004", nombre: "Tomate Frito LT 24Ud", categoria: "Conservas" },
+            { id: 16, codigo: "00005", nombre: "Atún Escabeche LT RO-160 32Ud", categoria: "Conservas" }
+        ];
+
+        let state = {
+            products: JSON.parse(localStorage.getItem('nave_products')) || initialProducts,
+            selection: JSON.parse(localStorage.getItem('nave_selection')) || {},
+            currentCategory: 'Todos',
+            searchQuery: ''
+        };
+
+        // Lucide Icons
+        lucide.createIcons();
+
+        function render() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const query = normalize(state.searchQuery);
+
+            const filtered = state.products.filter(p => {
+                const matchesCat = state.currentCategory === 'Todos' || p.categoria === state.currentCategory;
+                const matchesSearch = normalize(p.nombre).includes(query) ||
+                    normalize(p.codigo).includes(query);
+                return matchesCat && matchesSearch;
+            });
+
+            filtered.forEach(p => {
+                const isSelected = !!state.selection[p.id];
+                const card = document.createElement('div');
+                card.className = `product-card ${isSelected ? 'selected' : ''}`;
+                card.onclick = () => toggleSelect(p.id);
+
+                const quantity = isSelected ? state.selection[p.id].quantity : 1;
+                const notes = isSelected ? state.selection[p.id].notes : '';
+
+                card.innerHTML = `
+                    <div class="check-icon"><i data-lucide="check" style="width:14px; height:14px"></i></div>
+                    <div class="card-header">
+                        <span class="product-code">#${p.codigo}</span>
+                        <i data-lucide="tag" style="width:14px; color:var(--text-muted)"></i>
+                    </div>
+                    <div class="product-name">${p.nombre}</div>
+                    <div class="card-controls">
+                        <div class="quantity-control">
+                            <label>Cant.</label>
+                            <input type="number" value="${quantity}" min="1" onclick="event.stopPropagation()" onchange="updateItem(${p.id}, 'quantity', this.value)">
+                        </div>
+                        <div class="notes-control">
+                            <label>Nota</label>
+                            <input type="text" placeholder="..." value="${notes}" onclick="event.stopPropagation()" onchange="updateItem(${p.id}, 'notes', this.value)">
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            const count = Object.keys(state.selection).length;
+            const summary = document.getElementById('summaryBar');
+            if (count > 0) {
+                summary.classList.add('visible');
+                document.getElementById('selectedCount').textContent = `${count} ${count === 1 ? 'Producto' : 'Productos'}`;
+            } else {
+                summary.classList.remove('visible');
+            }
+
+            lucide.createIcons();
+            save();
+        }
+
+        function toggleSelect(id) {
+            if (state.selection[id]) {
+                delete state.selection[id];
+            } else {
+                state.selection[id] = { quantity: 1, notes: '' };
+            }
+            render();
+        }
+
+        function updateItem(id, field, value) {
+            if (!state.selection[id]) state.selection[id] = { quantity: 1, notes: '' };
+            state.selection[id][field] = value;
+            save();
+            render();
+        }
+
+        function setCategory(cat) {
+            state.currentCategory = cat;
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.textContent === cat);
+            });
+            render();
+        }
+
+        function filtrarProductos() {
+            state.searchQuery = document.getElementById('searchInput').value;
+            render();
+        }
+
+        function limpiarSeleccion() {
+            if (confirm('¿Vaciar la lista?')) {
+                state.selection = {};
+                render();
+                showToast('Lista vaciada');
+            }
+        }
+
+        function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+        function guardarNuevoProducto() {
+            const name = document.getElementById('newProdName').value;
+            const code = document.getElementById('newProdCode').value || '00000';
+            const cat = document.getElementById('newProdCat').value;
+
+            if (!name) return alert('Dime el nombre');
+
+            state.products.push({ id: Date.now(), codigo: code, nombre: name, categoria: cat });
+            closeModal();
+            render();
+            showToast('Añadido');
+        }
+
+        function save() {
+            localStorage.setItem('nave_products', JSON.stringify(state.products));
+            localStorage.setItem('nave_selection', JSON.stringify(state.selection));
+        }
+
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('visible');
+            setTimeout(() => t.classList.remove('visible'), 2000);
+        }
+
+        function compartirWhatsApp() {
+            const items = Object.entries(state.selection).map(([id, info]) => {
+                const p = state.products.find(prod => prod.id == id);
+                return `• *${p.nombre}* (${info.quantity})\n  ${info.notes ? '_Obs: ' + info.notes + '_' : ''}`;
+            }).join('\n');
+
+            // Enlace para compartir datos
+            // Usamos btoa para codificar los datos de forma sencilla en la URL
+            const dataStr = btoa(JSON.stringify(state.selection));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?data=${dataStr}`;
+
+            const text = `🛒 *LISTA NAVE*\n\n${items}\n\n🔗 *Abrir lista interactiva:* ${shareUrl}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+        }
+
+        async function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(22);
+            doc.setTextColor(99, 102, 241);
+            doc.text('Lista de Compra Nave', 20, 20);
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 30);
+
+            const tableData = Object.entries(state.selection).map(([id, info]) => {
+                const p = state.products.find(prod => prod.id == id);
+                return [p.codigo, p.nombre, info.quantity, info.notes || '-'];
+            });
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Código', 'Producto', 'Cant.', 'Notas']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [99, 102, 241] }
+            });
+
+            doc.save(`compra_nave_${new Date().toISOString().slice(0, 10)}.pdf`);
+            showToast('PDF Generado');
+        }
+
+        // PWA & INSTALL LOGIC
+        let deferredPrompt;
+        const installBtn = document.getElementById('btnInstall');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') installBtn.style.display = 'none';
+                deferredPrompt = null;
+            }
+        });
+
+        // IMPORTAR DATOS DE LA URL
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const data = urlParams.get('data');
+            if (data) {
+                try {
+                    const sharedSelection = JSON.parse(atob(data));
+                    if (confirm('🛒 ¡Te han compartido una lista de compra! ¿Quieres cargarla ahora?')) {
+                        state.selection = sharedSelection;
+                        render();
+                        showToast('Lista importada');
+                        // Limpiar URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                } catch (e) {
+                    console.error('Error al importar lista:', e);
+                }
+            }
+        }
+
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW OK'))
+                    .catch(err => console.log('SW Error', err));
+            });
+        }
+
+        // Init
+        checkUrlParams();
+        render();
+    </script>
+</body>
+
+</html>
