@@ -1,12 +1,12 @@
 {
-  "name": "Lista Nave",
+  "name": "Lista Nave Premium",
   "short_name": "Nave",
-  "description": "Tu lista de compra familiar premium y organizada",
+  "description": "Tu asistente de compra familiar, inteligente y offline.",
   "start_url": "./lista_compra.html",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#f8fafc",
   "theme_color": "#6366f1",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/3737/3737372.png",
@@ -21,13 +21,11 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["shopping", "productivity"],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3737/3737372.png",
-      "sizes": "1000x1000",
-      "type": "image/png",
-      "form_factor": "wide"
+      "name": "Nueva Lista",
+      "url": "./lista_compra.html?action=new",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3737/3737372.png", "sizes": "192x192" }]
     }
   ]
 }

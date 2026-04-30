@@ -5,21 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lista de Compra Premium</title>
-    <!-- iOS support -->
+    <!-- Soporte para iOS (iPhone/iPad) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lista Nave">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3737/3737372.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-startup-image" content="https://cdn-icons-png.flaticon.com/512/3737/3737372.png">
 
-    <!-- Google Fonts -->
+    <!-- Fuentes de Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
+    
+    <!-- Iconos Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- jsPDF & AutoTable -->
+    
+    <!-- Librerías para Generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Archivos de la Aplicación Web (PWA) -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
 
@@ -29,11 +35,22 @@
             --primary-hover: #4f46e5;
             --secondary: #ec4899;
             --background: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-bg: rgba(255, 255, 255, 0.82);
             --text-main: #1e293b;
             --text-muted: #64748b;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            --radius: 16px;
+            --radius: 20px;
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #0f172a;
+                --card-bg: rgba(30, 41, 59, 0.8);
+                --text-main: #f1f5f9;
+                --text-muted: #94a3b8;
+                --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            }
         }
 
         * {
@@ -42,10 +59,10 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            /* App feel: prevent text selection */
+            /* Estilo de App: evitar selección de texto accidental */
         }
 
-        /* Allow selection in inputs only */
+        /* Permitir selección solo en campos de texto */
         input,
         textarea,
         [contenteditable] {
@@ -62,9 +79,9 @@
             min-height: 100vh;
             padding: 20px;
             padding-bottom: 150px;
-            /* Space for summary footer */
+            /* Espacio para la barra de resumen inferior */
             overscroll-behavior-y: contain;
-            /* Prevent pull-to-refresh if desired */
+            /* Evitar el efecto de recarga al tirar hacia abajo en móviles */
         }
 
         .app-container {
@@ -72,7 +89,7 @@
             margin: 0 auto;
         }
 
-        /* --- Header --- */
+        /* --- Cabecera --- */
         header {
             text-align: center;
             margin-bottom: 40px;
@@ -93,7 +110,7 @@
             font-size: 0.85rem;
             cursor: pointer;
             display: none;
-            /* Hidden until prompt is available */
+            /* Oculto hasta que el navegador permita la instalación */
             align-items: center;
             gap: 5px;
             box-shadow: var(--shadow);
@@ -119,7 +136,7 @@
             font-size: 1.1rem;
         }
 
-        /* --- Controls (Search & Add) --- */
+        /* --- Controles (Buscador y Añadir) --- */
         .controls {
             display: flex;
             gap: 15px;
@@ -180,7 +197,7 @@
             transform: translateY(-2px);
         }
 
-        /* --- Categories --- */
+        /* --- Filtro de Categorías --- */
         .categories-filter {
             display: flex;
             gap: 10px;
@@ -213,7 +230,7 @@
             border-color: var(--primary);
         }
 
-        /* --- Products Grid --- */
+        /* --- Cuadrícula de Productos --- */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -336,23 +353,23 @@
             transform: scale(1);
         }
 
-        /* --- Summary Floating Bar --- */
+        /* --- Barra de Resumen Flotante --- */
         .summary-bar {
             position: fixed;
-            bottom: 30px;
+            bottom: var(--safe-bottom);
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
+            width: calc(100% - 30px);
             max-width: 800px;
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--card-bg);
             backdrop-filter: blur(20px);
-            padding: 20px 30px;
-            border-radius: 24px;
+            padding: 16px 24px;
+            border-radius: 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 1000;
             opacity: 0;
             transform: translate(-50%, 100px);
@@ -407,12 +424,28 @@
             color: #ef4444;
         }
 
-        .btn-action:hover {
-            transform: scale(1.05);
-            filter: brightness(1.1);
+        .btn-action:active {
+            transform: scale(0.95);
+            filter: brightness(0.9);
         }
 
-        /* --- Modals --- */
+        /* Modal de Ayuda / Instalación */
+        .help-step {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(99, 102, 241, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .help-step i {
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        /* --- Ventanas Modales --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -473,7 +506,7 @@
             gap: 10px;
         }
 
-        /* --- Animations --- */
+        /* --- Animaciones --- */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -508,7 +541,7 @@
             }
         }
 
-        /* --- Mobile Tweaks --- */
+        /* --- Ajustes para Móviles --- */
         @media (max-width: 640px) {
             .summary-bar {
                 flex-direction: column;
@@ -548,7 +581,7 @@
             }
         }
 
-        /* Hidden toast */
+        /* Notificación Toast oculta */
         #toast {
             position: fixed;
             top: 20px;
@@ -573,10 +606,15 @@
 
     <div class="app-container">
         <header>
-            <button id="btnInstall">
-                <i data-lucide="download-cloud"></i>
-                <span>Instalar App</span>
-            </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button id="btnHelp" onclick="openHelp()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">
+                    <i data-lucide="help-circle"></i>
+                </button>
+                <button id="btnInstall">
+                    <i data-lucide="download-cloud"></i>
+                    <span>Instalar App</span>
+                </button>
+            </div>
             <h1>🛒 Mi Lista Nave</h1>
             <p>Tu asistente de compra familiar</p>
         </header>
@@ -602,15 +640,15 @@
         </div>
 
         <div id="productsGrid" class="products-grid">
-            <!-- Products injected here -->
+            <!-- Los productos se inyectarán aquí mediante JS -->
         </div>
     </div>
 
-    <!-- Summary Bar -->
+    <!-- Barra de Resumen Inferior -->
     <div id="summaryBar" class="summary-bar">
         <div class="summary-info">
             <h3 id="selectedCount">0 Productos</h3>
-            <p>Toca para exportar</p>
+            <p>Toca para enviar o exportar</p>
         </div>
         <div class="summary-actions">
             <button class="btn-action btn-clear" onclick="limpiarSeleccion()">
@@ -628,7 +666,7 @@
         </div>
     </div>
 
-    <!-- Modal for New Product -->
+    <!-- Modal para Añadir Nuevo Producto -->
     <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -636,11 +674,11 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Nombre</label>
+                    <label>Nombre del Producto</label>
                     <input type="text" id="newProdName" placeholder="Ej: Leche Entera">
                 </div>
                 <div class="form-group">
-                    <label>Código</label>
+                    <label>Código de Artículo</label>
                     <input type="text" id="newProdCode" placeholder="Ej: 12345">
                 </div>
                 <div class="form-group">
@@ -660,12 +698,53 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de Ayuda / Instalación -->
+    <div id="helpOverlay" class="modal-overlay" onclick="closeHelp()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Guía de Instalación</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: var(--text-muted);">Usa esta aplicación como una app real (sin barras de navegador):</p>
+                
+                <div id="iosSteps" style="display:none;">
+                    <div class="help-step">
+                        <i data-lucide="share"></i>
+                        <p>Toca el icono de <b>Compartir</b> en la barra inferior de Safari.</p>
+                    </div>
+                    <div class="help-step">
+                        <i data-lucide="plus-square"></i>
+                        <p>Busca la opción <b>"Añadir a pantalla de inicio"</b>.</p>
+                    </div>
+                </div>
+
+                <div id="androidSteps" style="display:none;">
+                    <div class="help-step">
+                        <i data-lucide="more-vertical"></i>
+                        <p>Toca los <b>tres puntos</b> en la esquina superior derecha de Chrome.</p>
+                    </div>
+                    <div class="help-step">
+                        <i data-lucide="download-cloud"></i>
+                        <p>Selecciona <b>"Instalar aplicación"</b>.</p>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 20px; text-align: center;">
+                    Una vez instalada, funcionará 100% sin conexión a internet.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-add-item" style="padding:10px 20px; width:100%; justify-content:center;" onclick="closeHelp()">¡Entendido!</button>
+            </div>
+        </div>
+    </div>
 
     <div id="toast">¡Hecho!</div>
 
     <script>
-        // Data initial
-        const initialProducts = [
+        // Datos Iniciales
+        const productosIniciales = [
             { id: 1, codigo: "88189", nombre: "Ventresca Atún", categoria: "Conservas" },
             { id: 2, codigo: "88133", nombre: "Espárrago 6/12", categoria: "Conservas" },
             { id: 3, codigo: "89160", nombre: "Vino Care", categoria: "Bebidas" },
@@ -684,40 +763,41 @@
             { id: 16, codigo: "00005", nombre: "Atún Escabeche LT RO-160 32Ud", categoria: "Conservas" }
         ];
 
-        let state = {
-            products: JSON.parse(localStorage.getItem('nave_products')) || initialProducts,
-            selection: JSON.parse(localStorage.getItem('nave_selection')) || {},
-            currentCategory: 'Todos',
-            searchQuery: ''
+        let estado = {
+            productos: JSON.parse(localStorage.getItem('nave_products')) || productosIniciales,
+            seleccion: JSON.parse(localStorage.getItem('nave_selection')) || {},
+            categoriaActual: 'Todos',
+            busquedaQuery: ''
         };
 
-        // Lucide Icons
+        // Inicializar Iconos Lucide
         lucide.createIcons();
 
-        function render() {
-            const grid = document.getElementById('productsGrid');
-            grid.innerHTML = '';
+        function renderizar() {
+            const cuadrícula = document.getElementById('productsGrid');
+            cuadrícula.innerHTML = '';
 
-            const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            const query = normalize(state.searchQuery);
+            // Función para omitir tildes y normalizar texto
+            const normalizar = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const query = normalizar(estado.busquedaQuery);
 
-            const filtered = state.products.filter(p => {
-                const matchesCat = state.currentCategory === 'Todos' || p.categoria === state.currentCategory;
-                const matchesSearch = normalize(p.nombre).includes(query) ||
-                    normalize(p.codigo).includes(query);
-                return matchesCat && matchesSearch;
+            const filtrado = estado.productos.filter(p => {
+                const coincideCat = estado.categoriaActual === 'Todos' || p.categoria === estado.categoriaActual;
+                const coincideBusqueda = normalizar(p.nombre).includes(query) ||
+                    normalizar(p.codigo).includes(query);
+                return coincideCat && coincideBusqueda;
             });
 
-            filtered.forEach(p => {
-                const isSelected = !!state.selection[p.id];
-                const card = document.createElement('div');
-                card.className = `product-card ${isSelected ? 'selected' : ''}`;
-                card.onclick = () => toggleSelect(p.id);
+            filtrado.forEach(p => {
+                const estaSeleccionado = !!estado.seleccion[p.id];
+                const tarjeta = document.createElement('div');
+                tarjeta.className = `product-card ${estaSeleccionado ? 'selected' : ''}`;
+                tarjeta.onclick = () => alternarSeleccion(p.id);
 
-                const quantity = isSelected ? state.selection[p.id].quantity : 1;
-                const notes = isSelected ? state.selection[p.id].notes : '';
+                const cantidad = estaSeleccionado ? estado.seleccion[p.id].quantity : 1;
+                const notas = estaSeleccionado ? estado.seleccion[p.id].notes : '';
 
-                card.innerHTML = `
+                tarjeta.innerHTML = `
                     <div class="check-icon"><i data-lucide="check" style="width:14px; height:14px"></i></div>
                     <div class="card-header">
                         <span class="product-code">#${p.codigo}</span>
@@ -727,108 +807,129 @@
                     <div class="card-controls">
                         <div class="quantity-control">
                             <label>Cant.</label>
-                            <input type="number" value="${quantity}" min="1" onclick="event.stopPropagation()" onchange="updateItem(${p.id}, 'quantity', this.value)">
+                            <input type="number" value="${cantidad}" min="1" onclick="event.stopPropagation()" onchange="actualizarItem(${p.id}, 'quantity', this.value)">
                         </div>
                         <div class="notes-control">
                             <label>Nota</label>
-                            <input type="text" placeholder="..." value="${notes}" onclick="event.stopPropagation()" onchange="updateItem(${p.id}, 'notes', this.value)">
+                            <input type="text" placeholder="..." value="${notas}" onclick="event.stopPropagation()" onchange="actualizarItem(${p.id}, 'notes', this.value)">
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
+                cuadrícula.appendChild(tarjeta);
             });
 
-            const count = Object.keys(state.selection).length;
-            const summary = document.getElementById('summaryBar');
-            if (count > 0) {
-                summary.classList.add('visible');
-                document.getElementById('selectedCount').textContent = `${count} ${count === 1 ? 'Producto' : 'Productos'}`;
+            const total = Object.keys(estado.seleccion).length;
+            const resumen = document.getElementById('summaryBar');
+            if (total > 0) {
+                resumen.classList.add('visible');
+                document.getElementById('selectedCount').textContent = `${total} ${total === 1 ? 'Producto' : 'Productos'}`;
             } else {
-                summary.classList.remove('visible');
+                resumen.classList.remove('visible');
             }
 
             lucide.createIcons();
-            save();
+            guardarEstado();
         }
 
-        function toggleSelect(id) {
-            if (state.selection[id]) {
-                delete state.selection[id];
+        function alternarSeleccion(id) {
+            if (estado.seleccion[id]) {
+                delete estado.seleccion[id];
             } else {
-                state.selection[id] = { quantity: 1, notes: '' };
+                estado.seleccion[id] = { quantity: 1, notes: '' };
+                vibrar(20); // Feedback háptico
             }
-            render();
+            renderizar();
         }
 
-        function updateItem(id, field, value) {
-            if (!state.selection[id]) state.selection[id] = { quantity: 1, notes: '' };
-            state.selection[id][field] = value;
-            save();
-            render();
+        function vibrar(ms) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        function actualizarItem(id, campo, valor) {
+            if (!estado.seleccion[id]) estado.seleccion[id] = { quantity: 1, notes: '' };
+            estado.seleccion[id][campo] = valor;
+            guardarEstado();
+            renderizar();
         }
 
         function setCategory(cat) {
-            state.currentCategory = cat;
+            estado.categoriaActual = cat;
             document.querySelectorAll('.category-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.textContent === cat);
             });
-            render();
+            renderizar();
         }
 
         function filtrarProductos() {
-            state.searchQuery = document.getElementById('searchInput').value;
-            render();
+            estado.busquedaQuery = document.getElementById('searchInput').value;
+            renderizar();
         }
 
         function limpiarSeleccion() {
-            if (confirm('¿Vaciar la lista?')) {
-                state.selection = {};
-                render();
-                showToast('Lista vaciada');
+            if (confirm('¿Vaciar la lista de compra?')) {
+                estado.seleccion = {};
+                renderizar();
+                mostrarNotificacion('Lista vaciada');
             }
         }
 
         function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
+        function openHelp() {
+            const overlay = document.getElementById('helpOverlay');
+            overlay.style.display = 'flex';
+            
+            // Detectar OS para mostrar pasos correctos
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            document.getElementById('iosSteps').style.display = isIOS ? 'block' : 'none';
+            document.getElementById('androidSteps').style.display = isIOS ? 'none' : 'block';
+            
+            vibrar(10);
+        }
+        function closeHelp() { document.getElementById('helpOverlay').style.display = 'none'; }
+
         function guardarNuevoProducto() {
             const name = document.getElementById('newProdName').value;
             const code = document.getElementById('newProdCode').value || '00000';
             const cat = document.getElementById('newProdCat').value;
 
-            if (!name) return alert('Dime el nombre');
+            if (!name) return alert('Por favor, indica el nombre del producto');
 
-            state.products.push({ id: Date.now(), codigo: code, nombre: name, categoria: cat });
+            estado.productos.push({ id: Date.now(), codigo: code, nombre: name, categoria: cat });
             closeModal();
-            render();
-            showToast('Añadido');
+            renderizar();
+            mostrarNotificacion('Producto añadido');
+            
+            // Limpiar campos
+            document.getElementById('newProdName').value = '';
+            document.getElementById('newProdCode').value = '';
         }
 
-        function save() {
-            localStorage.setItem('nave_products', JSON.stringify(state.products));
-            localStorage.setItem('nave_selection', JSON.stringify(state.selection));
+        function guardarEstado() {
+            localStorage.setItem('nave_products', JSON.stringify(estado.productos));
+            localStorage.setItem('nave_selection', JSON.stringify(estado.seleccion));
         }
 
-        function showToast(text) {
+        function mostrarNotificacion(texto) {
             const t = document.getElementById('toast');
-            t.textContent = text;
+            t.textContent = texto;
             t.classList.add('visible');
             setTimeout(() => t.classList.remove('visible'), 2000);
         }
 
         function compartirWhatsApp() {
-            const items = Object.entries(state.selection).map(([id, info]) => {
-                const p = state.products.find(prod => prod.id == id);
+            const items = Object.entries(estado.seleccion).map(([id, info]) => {
+                const p = estado.productos.find(prod => prod.id == id);
                 return `• *${p.nombre}* (${info.quantity})\n  ${info.notes ? '_Obs: ' + info.notes + '_' : ''}`;
             }).join('\n');
 
-            // Enlace para compartir datos
-            // Usamos btoa para codificar los datos de forma sencilla en la URL
-            const dataStr = btoa(JSON.stringify(state.selection));
+            // Generar enlace para compartir la selección de forma interactiva
+            const dataStr = btoa(JSON.stringify(estado.seleccion));
             const shareUrl = `${window.location.origin}${window.location.pathname}?data=${dataStr}`;
 
-            const text = `🛒 *LISTA NAVE*\n\n${items}\n\n🔗 *Abrir lista interactiva:* ${shareUrl}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+            const textoFinal = `🛒 *MI LISTA DE COMPRA NAVE*\n\n${items}\n\n🔗 *Abrir lista interactiva:* ${shareUrl}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(textoFinal)}`);
         }
 
         async function exportarPDF() {
@@ -840,8 +941,8 @@
             doc.setFontSize(10);
             doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 30);
 
-            const tableData = Object.entries(state.selection).map(([id, info]) => {
-                const p = state.products.find(prod => prod.id == id);
+            const tableData = Object.entries(estado.seleccion).map(([id, info]) => {
+                const p = estado.productos.find(prod => prod.id == id);
                 return [p.codigo, p.nombre, info.quantity, info.notes || '-'];
             });
 
@@ -854,29 +955,29 @@
             });
 
             doc.save(`compra_nave_${new Date().toISOString().slice(0, 10)}.pdf`);
-            showToast('PDF Generado');
+            mostrarNotificacion('PDF Generado');
         }
 
-        // PWA & INSTALL LOGIC
-        let deferredPrompt;
+        // --- LÓGICA DE INSTALACIÓN DE APP (PWA) ---
+        let promptDiferido;
         const installBtn = document.getElementById('btnInstall');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
+            promptDiferido = e;
             installBtn.style.display = 'flex';
         });
 
         installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
+            if (promptDiferido) {
+                promptDiferido.prompt();
+                const { outcome } = await promptDiferido.userChoice;
                 if (outcome === 'accepted') installBtn.style.display = 'none';
-                deferredPrompt = null;
+                promptDiferido = null;
             }
         });
 
-        // IMPORTAR DATOS DE LA URL
+        // --- IMPORTACIÓN DE DATOS DESDE LA URL ---
         function checkUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
             const data = urlParams.get('data');
@@ -884,29 +985,30 @@
                 try {
                     const sharedSelection = JSON.parse(atob(data));
                     if (confirm('🛒 ¡Te han compartido una lista de compra! ¿Quieres cargarla ahora?')) {
-                        state.selection = sharedSelection;
-                        render();
-                        showToast('Lista importada');
-                        // Limpiar URL
+                        estado.seleccion = sharedSelection;
+                        renderizar();
+                        mostrarNotificacion('Lista importada');
+                        // Limpiar la URL para evitar recargas accidentales
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } catch (e) {
-                    console.error('Error al importar lista:', e);
+                    console.error('Error al importar lista compartida:', e);
                 }
             }
         }
 
+        // Registro del Service Worker para funcionamiento sin internet
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('SW OK'))
-                    .catch(err => console.log('SW Error', err));
+                    .then(reg => console.log('Service Worker: Registrado correctamente'))
+                    .catch(err => console.log('Service Worker: Error', err));
             });
         }
 
-        // Init
+        // Inicialización de la aplicación
         checkUrlParams();
-        render();
+        renderizar();
     </script>
 </body>
 
